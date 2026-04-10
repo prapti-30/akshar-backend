@@ -3,36 +3,34 @@ require("dotenv").config();
 const express = require("express");
 const nodemailer = require("nodemailer");
 const cors = require("cors");
-
-app.use(cors({
-    origin: "*"
-}));
-
-const app = express();
-
-console.log("USER:", process.env.EMAIL_USER);
-console.log("PASS:", process.env.EMAIL_PASS);
-
-// Middleware
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
 const path = require("path");
 
-app.use(express.static(path.join(__dirname, "../public"))); // FIX path if needed
+const app = express();   // ✅ FIRST create app
 
-// ✅ TRANSPORTER (using ENV)
+// ✅ MIDDLEWARE
+app.use(cors({ origin: "*" }));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
+// ✅ STATIC FILES (optional)
+app.use(express.static(path.join(__dirname, "public"))); // adjust if needed
+
+// ✅ TEST ROUTE
+app.get("/", (req, res) => {
+    res.send("Backend is running 🚀");
+});
+
+// ✅ MAIL TRANSPORTER (USE ENV VARIABLES)
 const transporter = nodemailer.createTransport({
     host: "smtp-relay.brevo.com",
     port: 587,
     secure: false,
     auth: {
-        user: "a7b1ae001@smtp-brevo.com",
-        pass: "xsmtpsib-0168c6fbd084ecb1581d3dd5a8e9252cc31d58b2e83733e4456739da35f7cd3e-e2uYKpIlAW9hnQw0"
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
     }
 });
-app.get("/", (req, res) => {
-    res.send("Backend is running 🚀");
-});
+
 // ✅ ROUTE
 app.post("/send-quotation", async (req, res) => {
 
@@ -40,12 +38,10 @@ app.post("/send-quotation", async (req, res) => {
 
     const { name, phone, email, location, services, message } = req.body;
 
-    // Convert services array to string
     const servicesList = Array.isArray(services)
         ? services.join(", ")
         : services || "N/A";
 
-    // ✅ TEXT FORMAT (what you asked for)
     const textContent = `
 New Quotation Request
 
@@ -63,11 +59,9 @@ ${message}
     try {
         await transporter.sendMail({
             from: `"Akshar Electrotekniks" <${process.env.EMAIL_USER}>`,
-            to: "info@aksharelektrotekniks.com", // receiver
+            to: "info@aksharelektrotekniks.com",
             replyTo: email,
             subject: "New Quotation Request",
-
-            // ✅ BOTH FORMATS
             text: textContent,
             html: `
                 <h2>New Quotation Request</h2>
@@ -81,16 +75,15 @@ ${message}
         });
 
         console.log("✅ Mail Sent");
-
         res.status(200).send("Success");
 
     } catch (error) {
         console.error("❌ Mail Error:", error);
-        res.status(500).send("Error");
+        res.status(500).send("Error sending mail");
     }
 });
 
-// SERVER
+// ✅ SERVER
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
