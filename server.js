@@ -2,6 +2,11 @@ require("dotenv").config();
 
 const express = require("express");
 const nodemailer = require("nodemailer");
+const cors = require("cors");
+
+app.use(cors({
+    origin: "*"
+}));
 
 const app = express();
 
@@ -25,7 +30,9 @@ const transporter = nodemailer.createTransport({
         pass: "xsmtpsib-0168c6fbd084ecb1581d3dd5a8e9252cc31d58b2e83733e4456739da35f7cd3e-e2uYKpIlAW9hnQw0"
     }
 });
-
+app.get("/", (req, res) => {
+    res.send("Backend is running 🚀");
+});
 // ✅ ROUTE
 app.post("/send-quotation", async (req, res) => {
 
